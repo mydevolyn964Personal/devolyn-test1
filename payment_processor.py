@@ -1,18 +1,6 @@
 
-def process_payment(amount: float, approved: bool = False) -> dict:
-    """Simulate payment processing without moving real money."""
-    if amount <= 0:
-        raise ValueError("Amount must be positive")
-
-    if not approved:
-        return {
-            "status": "pending_review",
-            "amount": amount,
-            "requires_human_review": True,
-        }
-
-    return {
-        "status": "approved",
-        "amount": amount,
-        "requires_human_review": False,
-    }
+def calculate_test_total(amount: float, fee: float = 0.0) -> float:
+    """Calculate a test total; does not process real payments."""
+    if amount < 0 or fee < 0:
+        raise ValueError("Amounts cannot be negative")
+    return amount + fee
