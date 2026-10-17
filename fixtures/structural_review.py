@@ -1,49 +1,32 @@
-"""Working pipeline example whose abstraction needs product-context review."""
+"""Working example of a design that may warrant structural review."""
 
-from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
-class Request:
-    text: str
-    tags: list[str] = field(default_factory=list)
+class Order:
+    customer: str
+    item_prices: list[float]
 
 
-Stage = Callable[[Request], Request]
+class OrderWorkflow:
+    """Coordinates order rules, presentation, and in-memory persistence."""
 
-
-class RequestPipeline:
     def __init__(self) -> None:
-        self._stages: list[tuple[str, Stage]] = []
+        self.saved_summaries: list[str] = []
 
-    def register(self, name: str, stage: Stage) -> None:
-        self._stages.append((name, stage))
+    def process(self, order: Order) -> str:
+        if not order.customer.strip():
+            raise ValueError("Customer name is required")
+        if any(price < 0 for price in order.item_prices):
+            raise ValueError("Item prices cannot be negative")
 
-    def run(self, request: Request) -> Request:
-        for _, stage in self._stages:
-            request = stage(request)
-        return request
-
-
-def trim_text(request: Request) -> Request:
-    request.text = request.text.strip()
-    return request
-
-
-def add_content_tag(request: Request) -> Request:
-    if request.text:
-        request.tags.append("has-content")
-    return request
-
-
-def build_request_pipeline() -> RequestPipeline:
-    pipeline = RequestPipeline()
-    pipeline.register("trim", trim_text)
-    pipeline.register("tag-content", add_content_tag)
-    return pipeline
+        total = round(sum(order.item_prices), 2)
+        summary = f"Order for {order.customer.strip()}: ${total:.2f}"
+        self.saved_summaries.append(summary)
+        return summary
 
 
 if __name__ == "__main__":
-    result = build_request_pipeline().run(Request("  Example input  "))
-    print(result)
+    workflow = OrderWorkflow()
+    print(workflow.process(Order("Example customer", [12.50, 7.25])))
