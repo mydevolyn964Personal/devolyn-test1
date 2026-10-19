@@ -91,13 +91,33 @@ manager; if it is only a placeholder, make that explicit in its name.
    non-blocking cases. It does not yet measure dependency, injection,
    authorization, data-retention, or destructive-operation coverage.
 
+## Follow-up project-style trial
+
+To ensure the evaluation was not limited to pre-existing fixtures, a new
+self-contained mini-service was added in
+`fixtures/devolyn_guard_trial.py` and pushed as commit `3b5a154`
+(`test: add Devolyn Guard mini-service trial`). It runs successfully and
+operates only on in-memory Python objects.
+
+| Deliberate case in the new file | Guard result | Assessment |
+| --- | --- | --- |
+| `PAYMENT_GATEWAY_PASSWORD` assigned a fake string literal (line 24) | **Blocked** under `python.hardcoded-credential` | Correct. Guard again treated a credential-shaped literal as merge-blocking. |
+| `environment = "production"` with `debug = True` | No finding | Potential coverage gap, depending on the product's policy for production debug mode. |
+| Email kept in an in-memory audit log | No finding | Reasonable to avoid a block without retention and access context, but a human-review/informational outcome would be useful. |
+| `reset_all_customers()` clears all in-memory customer records | No finding | The fixture is harmless, but a production equivalent is destructive and merits a review rule or confirmation policy. |
+
+The follow-up Guard check completed with `failure` at 09:48 IST, and the
+existing PR comment was updated in place. Its summary listed both credential
+fixtures as blocked and the two earlier context/structure fixtures as clear.
+
 ## Overall verdict
 
-Devolyn Guard passed the core test: it blocked the deliberate credential
-pattern while avoiding false-positive blocks on the two human-judgment cases.
-It should be used as a reliable merge gate for clear, high-confidence rules,
-but not as the sole reviewer for business impact or architecture. Keep human
-review for destructive operations, data-handling context, and design quality.
+Devolyn Guard passed the core test twice: it blocked both deliberate
+credential patterns while avoiding false-positive blocks on the human-judgment
+cases. It should be used as a reliable merge gate for clear, high-confidence
+rules, but not as the sole reviewer for business impact or architecture. Keep
+human review for destructive operations, data-handling context, production
+configuration, and design quality.
 
 ## Recommended next tests
 
