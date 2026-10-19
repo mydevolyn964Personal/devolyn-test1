@@ -56,3 +56,24 @@ false positives on local AI-agent infrastructure and explicit confirmation
 logic. Its limitation is that it did not—and should not be assumed to—verify
 business correctness, concurrent seat safety, privacy design, or the safety of
 future LLM-to-tool integrations.
+
+## TypeScript middleware follow-up
+
+An isolated, deliberately flawed TypeScript middleware file was added at
+`web_gateway/bookingMiddleware.ts` and audited in commit `9a3d94a`. It is not
+imported by the demo and cannot call external services. The Guard completed
+with **success** (“No problems found”) and marked this file `Clear`.
+
+This result reveals meaningful language/rule-coverage gaps:
+
+| Deliberate middleware case | Guard result | Review assessment |
+| --- | --- | --- |
+| `SUPPORT_OVERRIDE_TOKEN` is a credential-like string literal | Clear | The TypeScript scan did not apply the credential rule that correctly blocked the equivalent Python cases. |
+| Raw passenger email, source IP, and `Authorization` header are added to an audit array | Clear | This should receive at least a privacy/security human-review advisory; authorization values must not be logged in production. |
+| `x-support-override` allows booking confirmation without the customer replying `yes` | Clear | This is an approval-bypass path. A production middleware must use authenticated, authorized, auditable break-glass controls rather than a shared header token. |
+
+The follow-up therefore changes the assessment: Devolyn Guard is effective on
+the tested Python credential rule, but its current TypeScript middleware
+coverage did not surface three intentionally placed security, privacy, and
+authorization concerns. Human review remains mandatory for middleware that
+handles identity, headers, approval controls, or personal data.
